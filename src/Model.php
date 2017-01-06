@@ -356,6 +356,7 @@ class Model implements ArrayAccess, Iterator {
 		}
 
 		//更新时设置主键
+
 		if ( $this->actionType() == self::MODEL_UPDATE ) {
 			$this->original[ $this->pk ] = $this->data[ $this->pk ];
 		}
@@ -387,6 +388,8 @@ class Model implements ArrayAccess, Iterator {
 		if ( $this->actionType() == self::MODEL_UPDATE && $this->timestamps ) {
 			return Db::table( $this->table )->where( $this->pk, $this->data[ $this->pk ] )->update( [ 'updated_at' => time() ] );
 		}
+
+		return false;
 	}
 
 	/**
@@ -407,7 +410,7 @@ class Model implements ArrayAccess, Iterator {
 			return false;
 		}
 		//更新条件检测
-		$res = false;
+		$res = null;
 		$db  = Db::table( $this->table );
 		switch ( $this->actionType() ) {
 			case self::MODEL_UPDATE:
@@ -496,26 +499,29 @@ class Model implements ArrayAccess, Iterator {
 			self::$links[ $model ] = ( new static() );
 		}
 		$query = self::$links[ $model ];
-		$res   = call_user_func_array( [ $query, $method ], $params );
+		$res   = call_user_func_array( [ $query->db, $method ], $params );
 
 		return self::returnParse( $method, $res, self::$links[ $model ] );
 	}
 
 	protected static function returnParse( $method, $result, $model ) {
-		switch ( strtolower( $method ) ) {
-			case 'find':
-			case 'first':
-				$instance = clone $model;
+		if ( ! empty( $result ) ) {
+			switch ( strtolower( $method ) ) {
+				case 'find':
+				case 'first':
+					$instance = clone $model;
 
-				return $instance->data( $result );
-			case 'get':
-				$Collection = Collection::make( [ ] );
-				foreach ( $result as $k => $v ) {
-					$instance         = clone $model;
-					$Collection[ $k ] = $instance->data( $v );
-				}
+					return $instance->data( $result );
+					break;
+				case 'get':
+					$Collection = Collection::make( [ ] );
+					foreach ( $result as $k => $v ) {
+						$instance         = clone $model;
+						$Collection[ $k ] = $instance->data( $v );
+					}
 
-				return $Collection;
+					return $Collection;
+			}
 		}
 	}
 }
