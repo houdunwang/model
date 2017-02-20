@@ -505,7 +505,6 @@ class Model implements ArrayAccess, Iterator {
 				case 'find':
 				case 'first':
 					$instance = clone $model;
-
 					return $instance->data( $result );
 				case 'get':
 					$Collection = Collection::make( [ ] );
