@@ -10,6 +10,8 @@
 
 namespace houdunwang\model\build;
 
+use houdunwang\db\Db;
+
 trait Relation
 {
 
@@ -24,8 +26,8 @@ trait Relation
      */
     protected function hasOne($class, $foreignKey = 0, $localKey = 0)
     {
-        $foreignKey = $foreignKey ?: $this->table.'_'.$this->pk;
-        $localKey   = $localKey ?: $this->pk;
+        $foreignKey = $foreignKey ?: $this->getTable().'_'.$this->getPk();
+        $localKey   = $localKey ?: $this->getPk();
 
         return (new $class())->where($foreignKey, $this[$localKey])->first();
     }
@@ -41,8 +43,8 @@ trait Relation
      */
     protected function hasMany($class, $foreignKey = '', $localKey = '')
     {
-        $foreignKey = $foreignKey ?: $this->table.'_'.$this->pk;
-        $localKey   = $localKey ?: $this->pk;
+        $foreignKey = $foreignKey ?: $this->getTable().'_'.$this->getPk();
+        $localKey   = $localKey ?: $this->getPk();
 
         return (new $class())->where($foreignKey, $this[$localKey])->get();
     }
@@ -58,20 +60,20 @@ trait Relation
      */
     protected function belongsTo($class, $localKey = null, $parentKey = null)
     {
-        $instance = new $class();
         //父表
-        $parentKey = $parentKey ?: $instance->getPrimaryKey();
+        $instance  = new $class();
+        $parentKey = $parentKey ?: $instance->getPk();
         $localKey  = $localKey
-            ?: $instance->getTableName().'_'.$instance->getPrimaryKey();
+            ?: $instance->getTable().'_'.$instance->getPk();
 
-        return (new $class)->where($parentKey, $this[$localKey])->first();
+        return $instance->where($parentKey, $this[$localKey])->first();
     }
 
     /**
      * 多对多关联
      *
-     * @param        $class       关联类
-     * @param        $middleTable 中间表
+     * @param string $class       关联中间模型
+     * @param string $middleTable 中间表
      * @param string $localKey    主表字段
      * @param string $foreignKey  关联表字段
      *
@@ -79,23 +81,24 @@ trait Relation
      */
     protected function belongsToMany(
         $class,
-        $middleTable,
+        $middleTable = '',
         $localKey = '',
         $foreignKey = ''
     ) {
-        $instance   = (new $class);
-        $localKey   = $localKey ?: $this->table.'_'.$this->pk;
-        $foreignKey = $foreignKey
-            ?: $instance->getTableName().'_'.$instance->getPrimaryKey();
-        $middle     = Db::table($middleTable)->where(
+
+        $instance    = new $class;
+        $middleTable = $middleTable
+            ?: $this->getTable().'_'.$instance->getTable();
+        $localKey    = $localKey ?: $this->table.'_'.$this->pk;
+        $foreignKey  = $foreignKey
+            ?: $instance->getTable().'_'.$instance->getPrimaryKey();
+        $middle      = Db::table($middleTable)->where(
             $localKey,
             $this[$this->pk]
         )->lists($foreignKey);
 
-        return $instance->whereIn(
-            $instance->getPrimaryKey(),
-            array_values($middle)
-        )->get();
+        return $instance->whereIn($instance->getPk(), array_values($middle))
+            ->get();
     }
 }
 

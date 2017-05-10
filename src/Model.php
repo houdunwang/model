@@ -9,6 +9,7 @@
  * | Copyright (c) 2012-2019, www.houdunwang.com. All Rights Reserved.
  * '-------------------------------------------------------------------*/
 use ArrayAccess;
+use Carbon\Carbon;
 use houdunwang\arr\Arr;
 use houdunwang\collection\Collection;
 use houdunwang\db\Db;
@@ -19,7 +20,6 @@ use houdunwang\model\build\Filter;
 use houdunwang\model\build\Relation;
 use houdunwang\model\build\Validate;
 use Iterator;
-use PHPUnit\Runner\Exception;
 
 class Model implements ArrayAccess, Iterator
 {
@@ -88,20 +88,30 @@ class Model implements ArrayAccess, Iterator
 
     public function __construct($data = [])
     {
-        //设置表名
-        if (empty($this->table)) {
-            $model       = basename(str_replace('\\', '/', get_class($this)));
-            $this->table = strtolower(
-                preg_replace('/.([A-Z])/', '_\1', $model)
-            );
-        }
-        //数据驱动
-        $this->db = Db::table($this->table);
-        //表主键
-        $this->pk = $this->pk ?: $this->db->getPrimaryKey();
+        $this->setTable($this->table);
+        $this->setDb(Db::table($this->table));
+        $this->setPk($this->db->getPrimaryKey());
         if ( ! empty($data)) {
             $this->create($data);
         }
+    }
+
+    /**
+     * 设置表名
+     *
+     * @param string $table
+     */
+    public function setTable($table)
+    {
+        //设置表名
+        if (empty($table)) {
+            $model = basename(str_replace('\\', '/', get_class($this)));
+
+            $table = strtolower(
+                trim(preg_replace('/([A-Z])/', '_\1\2', $model), '_')
+            );
+        }
+        $this->table = $table;
     }
 
     /**
@@ -112,6 +122,36 @@ class Model implements ArrayAccess, Iterator
     public function getTable()
     {
         return $this->table;
+    }
+
+    /**
+     * 设置数据库连接
+     *
+     * @param mixed $db
+     */
+    public function setDb($db)
+    {
+        $this->db = $db;
+    }
+
+    /**
+     * 获取主键
+     *
+     * @return mixed
+     */
+    public function getPk()
+    {
+        return $this->pk;
+    }
+
+    /**
+     * 设置主键
+     *
+     * @param mixed $pk
+     */
+    public function setPk($pk)
+    {
+        $this->pk = $pk;
     }
 
     /**
@@ -150,6 +190,8 @@ class Model implements ArrayAccess, Iterator
      * 保存数据时的字段验证
      *
      * @param array $data
+     *
+     * @throws \Exception
      */
     final private function fieldFillCheck(array $data)
     {
@@ -170,7 +212,7 @@ class Model implements ArrayAccess, Iterator
         }
         $this->original = array_merge($this->original, $data);
         if (empty($this->original)) {
-            throw new Exception('没有数据用于添加');
+            throw new \Exception('没有数据用于添加');
         }
     }
 
@@ -190,19 +232,16 @@ class Model implements ArrayAccess, Iterator
         }
         //修改时间
         if ($this->timestamps === true) {
-            $this->original['updated_at'] = $this->getTime();
+            $this->original['updated_at']
+                = Carbon::now(new \DateTimeZone('PRC'));
             if ($this->action() == self::MODEL_INSERT) {
                 //更新时间
-                $this->original['created_at'] = $this->getTime();
+                $this->original['created_at']
+                    = Carbon::now(new \DateTimeZone('PRC'));
             }
         }
 
         return $this;
-    }
-
-    protected function getTime()
-    {
-        return date('Y-m-d h:i:s');
     }
 
     /**
@@ -224,10 +263,11 @@ class Model implements ArrayAccess, Iterator
     final public function touch()
     {
         if ($this->action() == self::MODEL_UPDATE && $this->timestamps) {
-            return Db::table($this->table)->where(
-                $this->pk,
-                $this->data[$this->pk]
-            )->update(['updated_at' => $this->getTime()]);
+            echo $this->data[$this->pk];
+            $data = ['updated_at' => Carbon::now('PRC')];
+
+            return $this->db->where($this->pk, $this->data[$this->pk])
+                ->update($data);
         }
 
         return false;
@@ -253,17 +293,16 @@ class Model implements ArrayAccess, Iterator
         }
         //更新条件检测
         $res = null;
-        $db  = Db::table($this->table);
         switch ($this->action()) {
             case self::MODEL_UPDATE:
-                if ($res = $db->update($this->original) && $this->pk) {
-                    $this->data = $db->find($this->data[$this->pk]);
+                if ($res = $this->db->update($this->original)) {
+                    $this->setData($this->db->find($this->data[$this->pk]));
                 }
                 break;
             case self::MODEL_INSERT:
-                if ($res = $db->insertGetId($this->original)) {
+                if ($res = $this->db->insertGetId($this->original)) {
                     if (is_numeric($res) && $this->pk) {
-                        $this->data = $db->find($res);
+                        $this->setData($this->db->find($res));
                     }
                 }
                 break;

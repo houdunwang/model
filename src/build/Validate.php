@@ -10,6 +10,7 @@
 
 namespace houdunwang\model\build;
 
+use houdunwang\db\Db;
 use houdunwang\validate\build\VaAction;
 
 /**
@@ -50,6 +51,7 @@ trait Validate
      */
     final protected function autoValidate()
     {
+        $this->setError([]);
         //验证库
         $VaAction = new VaAction();
         if (empty($this->validate)) {
@@ -127,7 +129,7 @@ trait Validate
                 }
             }
         }
-        \Validate::respond($this->error);
+        \houdunwang\validate\Validate::respond($this->error);
 
         return $this->error ? false : true;
     }
