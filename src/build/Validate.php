@@ -60,36 +60,24 @@ trait Validate
         $data = &$this->original;
         foreach ($this->validate as $validate) {
             //验证条件
-            $validate[3] = isset($validate[3]) ? $validate[3]
-                : self::EXIST_VALIDATE;
-            if ($validate[3] == self::EXIST_VALIDATE
-                && ! isset($data[$validate[0]])
-            ) {
+            $validate[3] = isset($validate[3]) ? $validate[3] : self::EXIST_VALIDATE;
+            if ($validate[3] == self::EXIST_VALIDATE && ! isset($data[$validate[0]])) {
                 continue;
-            } else if ($validate[3] == self::NOT_EMPTY_VALIDATE
-                && empty($data[$validate[0]])
-            ) {
+            } else if ($validate[3] == self::NOT_EMPTY_VALIDATE && empty($data[$validate[0]])) {
                 //不为空时处理
                 continue;
-            } else if ($validate[3] == self::EMPTY_VALIDATE
-                && ! empty($data[$validate[0]])
-            ) {
+            } else if ($validate[3] == self::EMPTY_VALIDATE && ! empty($data[$validate[0]])) {
                 //值为空时处理
                 continue;
-            } else if ($validate[3] == self::NOT_EXIST_VALIDATE
-                && isset($data[$validate[0]])
-            ) {
+            } else if ($validate[3] == self::NOT_EXIST_VALIDATE && isset($data[$validate[0]])) {
                 //值为空时处理
                 continue;
             } else if ($validate[3] == self::MUST_VALIDATE) {
                 //必须处理
             }
-            $validate[4] = isset($validate[4]) ? $validate[4]
-                : self::MODEL_BOTH;
+            $validate[4] = isset($validate[4]) ? $validate[4] : self::MODEL_BOTH;
             //验证时间判断
-            if ($validate[4] != $this->action()
-                && $validate[4] != self::MODEL_BOTH
-            ) {
+            if ($validate[4] != $this->action() && $validate[4] != self::MODEL_BOTH) {
                 continue;
             }
             //字段名
@@ -104,27 +92,24 @@ trait Validate
                 $info   = explode(':', $action);
                 $method = $info[0];
                 $params = isset($info[1]) ? $info[1] : '';
+
                 if (method_exists($this, $method)) {
                     //类方法验证
-                    if ($this->$method($field, $value, $params, $data)
-                        !== true
-                    ) {
-                        $this->error[] = $error;
+                    if ($this->$method($field, $value, $params, $data) != true) {
+                        $this->error[$field] = $error;
                     }
                 } else if (method_exists($VaAction, $method)) {
-                    if ($VaAction->$method($field, $value, $params, $data)
-                        !== true
-                    ) {
-                        $this->error[] = $error;
+                    if ($VaAction->$method($field, $value, $params, $data) != true) {
+                        $this->error[$field] = $error;
                     }
                 } else if (function_exists($method)) {
                     if ($method($value) != true) {
-                        $this->error[] = $error;
+                        $this->error[$field] = $error;
                     }
                 } else if (substr($method, 0, 1) == '/') {
                     //正则表达式
                     if ( ! preg_match($method, $value)) {
-                        $this->error[] = $error;
+                        $this->error[$field] = $error;
                     }
                 }
             }

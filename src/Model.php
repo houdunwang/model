@@ -232,14 +232,13 @@ class Model implements ArrayAccess, Iterator
         }
         //修改时间
         if ($this->timestamps === true) {
-            $this->original['updated_at']
-                = Carbon::now(new \DateTimeZone('PRC'));
+            $this->original['updated_at'] = Carbon::now(new \DateTimeZone('PRC'));
+            //更新时间设置
             if ($this->action() == self::MODEL_INSERT) {
-                //更新时间
-                $this->original['created_at']
-                    = Carbon::now(new \DateTimeZone('PRC'));
+                $this->original['created_at'] = Carbon::now(new \DateTimeZone('PRC'));
             }
         }
+        $this->original = array_merge($this->data, $this->original);
 
         return $this;
     }
@@ -251,8 +250,7 @@ class Model implements ArrayAccess, Iterator
      */
     final public function action()
     {
-        return empty($this->data[$this->pk]) ? self::MODEL_INSERT
-            : self::MODEL_UPDATE;
+        return empty($this->data[$this->pk]) ? self::MODEL_INSERT : self::MODEL_UPDATE;
     }
 
     /**
@@ -267,7 +265,7 @@ class Model implements ArrayAccess, Iterator
             $data = ['updated_at' => Carbon::now('PRC')];
 
             return $this->db->where($this->pk, $this->data[$this->pk])
-                ->update($data);
+                            ->update($data);
         }
 
         return false;
@@ -415,8 +413,6 @@ class Model implements ArrayAccess, Iterator
                     if ($result instanceof Query) {
                         return $this;
                     }
-
-                    return $result;
             }
         }
 

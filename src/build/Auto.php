@@ -46,17 +46,17 @@ trait Auto
                 //有这个字段处理
                 continue;
             } else if ($auto[3] == self::NOT_EMPTY_AUTO
-                && empty($data[$auto[0]])
+                       && empty($data[$auto[0]])
             ) {
                 //不为空时处理
                 continue;
             } else if ($auto[3] == self::EMPTY_AUTO
-                && ! empty($data[$auto[0]])
+                       && ! empty($data[$auto[0]])
             ) {
                 //值为空时处理
                 continue;
             } else if ($auto[3] == self::NOT_EXIST_AUTO
-                && isset($data[$auto[0]])
+                       && isset($data[$auto[0]])
             ) {
                 //值不存在时处理
                 continue;
@@ -71,7 +71,7 @@ trait Auto
                     $data[$auto[0]] = '';
                 }
                 if ($auto[2] == 'method') {
-                    $data[$auto[0]] = $this->$auto[1]($data[$auto[0]], $data);
+                    $data[$auto[0]] =call_user_func_array([$this,$auto[1]],[$data[$auto[0]],$data]);
                 } else if ($auto[2] == 'function') {
                     $data[$auto[0]] = $auto[1]($data[$auto[0]]);
                 } else if ($auto[2] == 'string') {

@@ -151,4 +151,9 @@ abstract class Repository implements RepositoryInterface, RuleInterface
 
         return $this;
     }
+
+    public function __call($name, $arguments)
+    {
+        return call_user_func_array([$this->model, $name], $arguments);
+    }
 }
