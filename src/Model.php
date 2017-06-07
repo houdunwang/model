@@ -281,14 +281,15 @@ class Model implements ArrayAccess, Iterator
      */
     final public function save(array $data = [])
     {
-        //批量设置数据
-        $this->create($data);
+        $this->fieldFillCheck($data);
         //自动完成/自动过滤/自动验证
         $this->autoOperation();
         $this->autoFilter();
         if ( ! $this->autoValidate()) {
             return false;
         }
+        //批量设置数据
+        $this->create($data);
         //更新条件检测
         $res = null;
         switch ($this->action()) {
