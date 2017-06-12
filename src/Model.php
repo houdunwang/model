@@ -187,7 +187,7 @@ class Model implements ArrayAccess, Iterator
     }
 
     /**
-     * 保存数据时的字段验证
+     * 自动填充数据处理
      *
      * @param array $data
      *
@@ -210,7 +210,7 @@ class Model implements ArrayAccess, Iterator
                 $data = Arr::filterKeys($data, $this->denyFill, 1);
             }
         }
-        $this->original = array_merge($this->original, $data);
+        $this->original = array_merge($data, $this->original);
         if (empty($this->original)) {
             throw new \Exception('没有数据用于添加');
         }
@@ -219,13 +219,10 @@ class Model implements ArrayAccess, Iterator
     /**
      * 批量设置做准备数据
      *
-     * @param array $data
-     *
      * @return $this
      */
-    final private function create(array $data = [])
+    final private function create()
     {
-        $this->fieldFillCheck($data);
         //更新时设置主键
         if ($this->action() == self::MODEL_UPDATE) {
             $this->original[$this->pk] = $this->data[$this->pk];
@@ -281,15 +278,18 @@ class Model implements ArrayAccess, Iterator
      */
     final public function save(array $data = [])
     {
+        //自动填充数据处理
         $this->fieldFillCheck($data);
-        //自动完成/自动过滤/自动验证
-        $this->autoOperation();
+        //自动过滤
         $this->autoFilter();
+        //自动验证
         if ( ! $this->autoValidate()) {
             return false;
         }
-        //批量设置数据
-        $this->create($data);
+        //自动完成
+        $this->autoOperation();
+        //创建添加数据
+        $this->create();
         //更新条件检测
         $res = null;
         switch ($this->action()) {
@@ -397,6 +397,7 @@ class Model implements ArrayAccess, Iterator
 
                     return $instance->setData($result);
                 case 'get':
+                case 'paginate':
                     $Collection = Collection::make([]);
                     foreach ($result as $k => $v) {
                         $instance       = new static();
@@ -404,8 +405,6 @@ class Model implements ArrayAccess, Iterator
                     }
 
                     return $Collection;
-                case 'paginate':
-                    return $result;
                 default:
                     /**
                      * 返回值为查询构造器对象时
