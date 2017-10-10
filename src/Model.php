@@ -211,9 +211,6 @@ class Model implements ArrayAccess, Iterator
             }
         }
         $this->original = array_merge($data, $this->original);
-        if (empty($this->original)) {
-            throw new \Exception('没有数据用于添加');
-        }
     }
 
     /**
@@ -235,7 +232,6 @@ class Model implements ArrayAccess, Iterator
                 $this->original['created_at'] = Carbon::now(new \DateTimeZone('PRC'));
             }
         }
-        $this->original = array_merge($this->data, $this->original);
 
         return $this;
     }
@@ -282,12 +278,13 @@ class Model implements ArrayAccess, Iterator
         $this->fieldFillCheck($data);
         //自动过滤
         $this->autoFilter();
+        //自动完成
+        $this->autoOperation();
+        $this->original = array_merge($this->data, $this->original);
         //自动验证
         if ( ! $this->autoValidate()) {
             return false;
         }
-        //自动完成
-        $this->autoOperation();
         //创建添加数据
         $this->create();
         //更新条件检测

@@ -37,21 +37,28 @@ trait Validate
     }
 
     /**
-     * @param array $error
+     * 设置错误提示
+     *
+     * @param array|string $error
      */
-    public function setError(array $error)
+    public function setError($error)
     {
-        $this->error = $error;
+        $error       = is_array($error) ? $error : [$error];
+        $this->error = array_merge($this->error, $error);
     }
 
     /**
      * 自动验证
      *
      * @return bool
+     * @throws \Exception
      */
     final protected function autoValidate()
     {
         $this->setError([]);
+        if (empty($this->original)) {
+            throw new \Exception('没有数据用于添加');
+        }
         //验证库
         $VaAction = new VaAction();
         if (empty($this->validate)) {

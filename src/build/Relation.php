@@ -97,8 +97,7 @@ trait Relation
             $this[$this->pk]
         )->lists($foreignKey);
 
-        return $instance->whereIn($instance->getPk(), array_values($middle))
-            ->get();
+        return $instance->whereIn($instance->getPk(), array_values($middle))->get();
     }
 }
 
