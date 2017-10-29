@@ -254,11 +254,8 @@ class Model implements ArrayAccess, Iterator
     final public function touch()
     {
         if ($this->action() == self::MODEL_UPDATE && $this->timestamps) {
-            echo $this->data[$this->pk];
             $data = ['updated_at' => Carbon::now('PRC')];
-
-            return $this->db->where($this->pk, $this->data[$this->pk])
-                            ->update($data);
+            return $this->db->where($this->pk, $this->data[$this->pk])->update($data);
         }
 
         return false;
