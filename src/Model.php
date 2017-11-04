@@ -255,6 +255,7 @@ class Model implements ArrayAccess, Iterator
     {
         if ($this->action() == self::MODEL_UPDATE && $this->timestamps) {
             $data = ['updated_at' => Carbon::now('PRC')];
+
             return $this->db->where($this->pk, $this->data[$this->pk])->update($data);
         }
 
@@ -351,6 +352,7 @@ class Model implements ArrayAccess, Iterator
     public function __set($name, $value)
     {
         $this->original[$name] = $value;
+        $this->data[$name]     = $value;
     }
 
     /**

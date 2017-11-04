@@ -24,6 +24,7 @@ trait ArrayIterator
     public function offsetSet($key, $value)
     {
         $this->original[$key] = $value;
+        $this->data[$key]     = $value;
     }
 
     /**
@@ -53,6 +54,9 @@ trait ArrayIterator
     {
         if (isset($this->original[$key])) {
             unset($this->original[$key]);
+        }
+        if (isset($this->data[$key])) {
+            unset($this->data[$key]);
         }
     }
 
