@@ -88,20 +88,39 @@ class Model implements ArrayAccess, Iterator
 
     public function __construct($data = [])
     {
+        if ($this->table) {
+            $this->init($data);
+        }
+    }
+
+    /**
+     * 初始化模型数据
+     *
+     * @param array $data
+     *
+     * @return $this
+     */
+    protected function init(array $data = [])
+    {
         $this->setTable($this->table);
         $this->setDb(Db::table($this->table));
+        $this->db->setModel($this);
         $this->setPk($this->db->getPrimaryKey());
         if ( ! empty($data)) {
             $this->create($data);
         }
+
+        return $this;
     }
 
     /**
      * 设置表名
      *
-     * @param string $table
+     * @param $table
+     *
+     * @return $this
      */
-    public function setTable($table)
+    protected function setTable($table)
     {
         //设置表名
         if (empty($table)) {
@@ -112,6 +131,8 @@ class Model implements ArrayAccess, Iterator
             );
         }
         $this->table = $table;
+
+        return $this;
     }
 
     /**
@@ -196,7 +217,7 @@ class Model implements ArrayAccess, Iterator
     final private function fieldFillCheck(array $data)
     {
         if (empty($this->allowFill) && empty($this->denyFill)) {
-            $data = [];
+            return;
         }
         //允许填充的数据
         if ( ! empty($this->allowFill) && $this->allowFill[0] != '*') {
@@ -210,7 +231,7 @@ class Model implements ArrayAccess, Iterator
                 $data = Arr::filterKeys($data, $this->denyFill, 1);
             }
         }
-        $this->original = array_merge($data, $this->original);
+        $this->original = array_merge($this->original, $data);
     }
 
     /**
@@ -278,11 +299,11 @@ class Model implements ArrayAccess, Iterator
         $this->autoFilter();
         //自动完成
         $this->autoOperation();
-        $this->original = array_merge($this->data, $this->original);
         //自动验证
         if ( ! $this->autoValidate()) {
             return false;
         }
+        $this->original = array_merge($this->data, $this->original);
         //创建添加数据
         $this->create();
         //更新条件检测
@@ -304,6 +325,24 @@ class Model implements ArrayAccess, Iterator
         $this->original = [];
 
         return $res;
+    }
+
+    /**
+     * 存在编号时根据主键编号创建模型
+     * 不正在是new 新模型
+     *
+     * @param int $id 主键编号
+     *
+     * @return \houdunwang\model\Model
+     */
+    final static public function findOrCreate($id = 0)
+    {
+        $model = ! empty($id) && is_numeric($id) ? static::find($id) : new static();
+        if (empty($model)) {
+            return new static();
+        }
+
+        return $model;
     }
 
     /**
